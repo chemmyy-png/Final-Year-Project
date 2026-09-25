@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingLeft="24dp"
+    android:paddingRight="24dp">
+
+
+    <ImageView
+        android:id="@+id/appIcon"
+        android:layout_width="85dp"
+        android:layout_height="85dp"
+        android:layout_marginBottom="25dp"
+        android:background="@drawable/icon_rounded_box"
+        android:src="@drawable/icon_transparent" />
+
+    <TextView
+        android:id="@+id/titleApp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:fontFamily="@font/inter_18pt_bold"
+        android:text="Rogue AP Detector"
+        android:textColor="@color/white_text"
+        android:textSize="28sp" />
+
+    <TextView
+        android:id="@+id/descApp"
+        android:layout_width="299dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="30dp"
+        android:fontFamily="@font/inter_18pt_regular"
+        android:text="Scan your network to detect unauthorized access points and protect your security"
+        android:textAlignment="center"
+        android:textColor="@color/secondary_text"
+        android:textSize="15sp" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/scanButton"
+        android:layout_width="308dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="40dp"
+        android:background="@drawable/button_background"
+        android:backgroundTint="@null"
+        android:elevation="@dimen/cardview_default_radius"
+        android:text="Start Network Scan"
+        android:textColor="@color/white_text" />
+
+    <LinearLayout
+        android:id="@+id/scanningLayout"
+        android:layout_width="308dp"
+        android:layout_height="180dp"
+        android:layout_marginBottom="40dp"
+        android:background="@drawable/scanning_card"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:visibility="gone">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:indeterminate="true"
+            app:indicatorColor="@color/light_blue_indicator"
+            app:indicatorSize="64dp"
+            app:trackColor="@color/muted_blue_grey"
+            app:trackThickness="3dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:fontFamily="@font/inter_18pt_bold"
+            android:text="Scanning Network..."
+            android:textColor="@color/white_text"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/inter_18pt_regular"
+            android:text="Detecting access points"
+            android:textColor="@color/secondary_text"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/box_1"
+        android:layout_width="310dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="10dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/image_1"
+            android:layout_width="58dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="left"
+            app:srcCompat="@drawable/icon_1" />
+
+        <TextView
+            android:id="@+id/text_1"
+            android:layout_width="225dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:fontFamily="@font/inter_18pt_italic"
+            android:textColor="@color/secondary_white"
+            android:text="   Monitors all nearby access points" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/box_2"
+        android:layout_width="310dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="10dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/image_2"
+            android:layout_width="58dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="left"
+            app:srcCompat="@drawable/icon_2" />
+
+        <TextView
+            android:id="@+id/text_2"
+            android:layout_width="225dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:fontFamily="@font/inter_18pt_italic"
+            android:textColor="@color/secondary_white"
+            android:text="   Identifies unauthorized networks" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/box_3"
+        android:layout_width="310dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="10dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/image_3"
+            android:layout_width="58dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="left"
+            app:srcCompat="@drawable/icon_3" />
+
+        <TextView
+            android:id="@+id/text_3"
+            android:layout_width="225dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:fontFamily="@font/inter_18pt_italic"
+            android:textColor="@color/secondary_white"
+            android:text="   Real-time security alerts" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">WiShield (Rogue Access Point Detector App)</string>
+    <string name="wishield">WiShield</string>
+    <string name="security_monitor">Security Monitor</string>
+    <string name="total_label">Total</string>
+    <string name="safe_label">Safe</string>
+    <string name="revoked_label">Revoked</string>
+    <string name="rescan_network">Rescan Network</string>
+    <string name="filter_all">All</string>
+    <string name="filter_safe">Safe</string>
+    <string name="filter_revoked">Revoked</string>
+    <string name="network_security_label">Security</string>
+    <string name="network_vendor_label">Vendor</string>
+    <string name="connect">Connect</string>
+    <string name="revoke_access">REVOKE ACCESS</string>
+</resources>
