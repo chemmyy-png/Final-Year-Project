@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/card_background_rounded"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Header Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="#261A1A"
+            android:padding="8dp"
+            app:srcCompat="@drawable/transparent_2"
+            app:tint="@color/status_red" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:fontFamily="@font/inter_18pt_bold"
+            android:text="Connection Blocked"
+            android:textColor="@color/status_red"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+    <!-- Threat Details & Warning -->
+    <TextView
+        android:id="@+id/tvThreatDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:fontFamily="@font/inter_18pt_medium"
+        android:lineSpacingExtra="4dp"
+        android:text="Threat Details"
+        android:textColor="@color/secondary_white"
+        android:textSize="13sp" />
+
+    <!-- Default Option: Maintain Block -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnKeepBlocked"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/primary_blue"
+        android:fontFamily="@font/inter_18pt_bold"
+        android:text="Keep Blocked (Recommended)"
+        android:textAllCaps="false"
+        android:textColor="@color/white_text"
+        app:cornerRadius="12dp" />
+
+    <!-- Secondary Override Options Button -->
+    <TextView
+        android:id="@+id/tvOverrideConnect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:padding="6dp"
+        android:fontFamily="@font/inter_18pt_medium"
+        android:text="Connect Anyway (Override Warning)"
+        android:textColor="#9CA3AF"
+        android:textSize="13sp" />
+
+</LinearLayout>

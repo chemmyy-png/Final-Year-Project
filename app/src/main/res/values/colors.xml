@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background">#030712</color>
+    <color name="card_background">#0E1628</color>
+    <color name="primary_blue">#1657EF</color>
+    <color name="light_blue_indicator">#9DC6F5</color>
+    <color name="button_color">#7199C9</color>
+    <color name="blue_hover_lighter">#2A6CFF</color>
+    <color name="white_text">#ECEBED</color>
+    <color name="secondary_text">#6C6C6C</color>
+    <color name="secondary_white">#9A9A9B</color>
+    <color name="muted_blue_grey">#26334D</color>
+    <color name="divider">#394553</color>
+
+    <!-- Dashboard color status -->
+    <color name="status_green">#22C55E</color> <!-- Safe or success -->
+    <color name="status_yellow">#F59E0B</color> <!-- Warning -->
+    <color name="status_red">#EF4444</color>    <!-- Danger -->
+    <color name="status_blue">#1657EF</color>   <!-- Information -->
+</resources>
