@@ -1,6 +1,7 @@
 package com.example.wishieldrogueaccesspointdetectorapp;
 
 import android.content.Intent;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -115,6 +116,24 @@ public class DashboardActivity extends AppCompatActivity
                     PERMISSION_REQUEST);
             return;
         }
+
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean isLocationEnabled = false;
+        if (locationManager != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                isLocationEnabled = locationManager.isLocationEnabled();
+            } else {
+                isLocationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                        locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            }
+        }
+
+        if (!isLocationEnabled) {
+            Toast.makeText(this, "Please enable Location/GPS to scan Wi-Fi networks.", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+            return;
+        }
+
         btnRescan.setEnabled(false);
         btnRescan.setText(R.string.scanning);
         scanner.requestScan();

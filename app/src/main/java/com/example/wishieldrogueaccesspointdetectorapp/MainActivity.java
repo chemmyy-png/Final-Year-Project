@@ -1,7 +1,10 @@
 package com.example.wishieldrogueaccesspointdetectorapp;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -11,6 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.example.wishieldrogueaccesspointdetectorapp.model.AccessPoint;
 import com.example.wishieldrogueaccesspointdetectorapp.scan.WifiScanner;
@@ -58,18 +62,39 @@ public class MainActivity extends AppCompatActivity implements WifiScanner.Liste
     // ------------------------------------------------------------------
 
     private void beginScan() {
+        // 1. Check & Request App Permissions
         if (!WifiScanner.hasPermissions(this)) {
             ActivityCompat.requestPermissions(this, WifiScanner.requiredPermissions(),
                     PERMISSION_REQUEST);
             return;
         }
+
+        // 2. Check if System Location (GPS) is turned ON
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean isGpsEnabled = false;
+        if (locationManager != null) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                isGpsEnabled = locationManager.isLocationEnabled();
+            } else {
+                isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                        locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            }
+        }
+
+        if (!isGpsEnabled) {
+            Toast.makeText(this, "Please enable Location/GPS to scan Wi-Fi networks.", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+            return;
+        }
+
+        // 3. Permissions & System Location ready -> Start Scan
         showScanningState(true);
         scanner.requestScan();
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                            @NonNull int[] grantResults) {
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST) {
             if (WifiScanner.hasPermissions(this)) {

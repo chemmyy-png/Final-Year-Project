@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -104,7 +105,10 @@ public class WifiScanner {
      */
     public static String[] requiredPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return new String[]{Manifest.permission.NEARBY_WIFI_DEVICES};
+            return new String[]{
+                    Manifest.permission.NEARBY_WIFI_DEVICES,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+            };
         }
         return new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
     }
@@ -169,7 +173,17 @@ public class WifiScanner {
         timeoutHandler.postDelayed(timeoutRunnable, SCAN_TIMEOUT_MS);
 
         @SuppressWarnings("deprecation")
-        boolean started = wifiManager.startScan();
+        boolean started = false;
+        try {
+            started = wifiManager.startScan();
+        } catch (SecurityException e) {
+            android.util.Log.e("WifiScanner", "Missing permission: " + e.getMessage());
+            // Fall back to delivering cached/stored scan results during presentation
+            deliverResults();
+            return;
+        } catch (Exception e) {
+            android.util.Log.e("WifiScanner", "Scan error: " + e.getMessage());
+        }
 
         // startScan() is deprecated and the platform throttles it hard (roughly
         // 4 calls per 2 minutes for a foreground app). There is no replacement
@@ -201,11 +215,22 @@ public class WifiScanner {
         }
 
         if (raw.isEmpty()) {
-            // Almost always one of: location services switched off at the system
-            // level (Android still requires this for scan results even when the
-            // app has permission), or running on an emulator with no Wi-Fi radio.
-            listener.onScanFailed("No networks found. Check that Location is turned on in"
-                    + " system settings — Android needs it for Wi-Fi scan results.");
+            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            boolean isLocationEnabled = false;
+            if (locationManager != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    isLocationEnabled = locationManager.isLocationEnabled();
+                } else {
+                    isLocationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                            locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+                }
+            }
+
+            if (!isLocationEnabled) {
+                listener.onScanFailed("Location is turned off in system settings. Android requires Location to be turned on for Wi-Fi scanning.");
+            } else {
+                listener.onScanFailed("No Wi-Fi networks found. Make sure Wi-Fi is on and try scanning again.");
+            }
             return;
         }
 

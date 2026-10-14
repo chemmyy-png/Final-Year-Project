@@ -1,34 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.example.wishieldrogueaccesspointdetectorapp">
 
-    <!--
-        Permissions required for Wi-Fi scanning.
-    -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Wi-Fi State Permissions -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
-    <!--
-        Android 12L (API 32) and below: the platform only releases Wi-Fi scan
-        results to apps holding a location permission.
-    -->
-    <uses-permission
-        android:name="android.permission.ACCESS_FINE_LOCATION"
-        android:maxSdkVersion="32" />
-    <uses-permission
-        android:name="android.permission.ACCESS_COARSE_LOCATION"
-        android:maxSdkVersion="32" />
+    <!-- Location Permissions for Wi-Fi scanning -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!--
-        Android 13+ (API 33+): scan without requesting location access.
-    -->
+    <!-- Nearby Wi-Fi Devices for Android 13+ (API 33+) -->
     <uses-permission
         android:name="android.permission.NEARBY_WIFI_DEVICES"
-        android:usesPermissionFlags="neverForLocation"
         tools:targetApi="33" />
 
-    <!-- Hides the app from devices with no Wi-Fi radio rather than failing on them -->
+    <!-- Feature requirement -->
     <uses-feature
         android:name="android.hardware.wifi"
         android:required="true" />
@@ -42,15 +30,16 @@
         android:roundIcon="@drawable/wishiled_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.WiShieldRogueAccessPointDetectorApp">
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".DashboardActivity"
             android:exported="false" />
