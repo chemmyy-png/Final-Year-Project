@@ -1,100 +1,253 @@
 package com.example.wishieldrogueaccesspointdetectorapp;
 
-import android.app.Dialog;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
-import android.view.Window;
-import android.widget.Button;
+import android.provider.Settings;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.wishieldrogueaccesspointdetectorapp.detect.RogueDetector;
+import com.example.wishieldrogueaccesspointdetectorapp.model.AccessPoint;
+import com.example.wishieldrogueaccesspointdetectorapp.model.Verdict;
+import com.example.wishieldrogueaccesspointdetectorapp.scan.ScanRepository;
+import com.example.wishieldrogueaccesspointdetectorapp.scan.WifiScanner;
+import com.example.wishieldrogueaccesspointdetectorapp.ui.NetworkAdapter;
 import com.google.android.material.button.MaterialButton;
 
-public class DashboardActivity extends AppCompatActivity {
+import java.util.ArrayList;
+import java.util.List;
 
-    private boolean overridePermitted = false;
+public class DashboardActivity extends AppCompatActivity
+        implements WifiScanner.Listener, NetworkAdapter.OnCardActionListener {
+
+    private static final int PERMISSION_REQUEST = 2001;
+
+    private enum Filter { ALL, SAFE, FLAGGED }
+
+    private WifiScanner scanner;
+    private NetworkAdapter adapter;
+    private Filter activeFilter = Filter.ALL;
+    private boolean initialScanPending = true;
+
+    private List<AccessPoint> allResults = new ArrayList<>();
+
+    private TextView statTotal, statSafe, statFlagged;
+    private TextView tabAll, tabSafe, tabFlagged;
+    private TextView emptyState;
+    private RecyclerView recyclerView;
+    private MaterialButton btnRescan;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
-        MaterialButton btnConnectSafe = findViewById(R.id.btnConnectSafe);
-        MaterialButton btnBlockedRogueAction = findViewById(R.id.btnBlockedRogueAction);
+        statTotal = findViewById(R.id.statTotal);
+        statSafe = findViewById(R.id.statSafe);
+        statFlagged = findViewById(R.id.statFlagged);
 
-        // Safe Network: Direct connection
-        if (btnConnectSafe != null) {
-            btnConnectSafe.setOnClickListener(v -> {
-                Toast.makeText(this, "Connecting securely to gmi (TP-Link)...", Toast.LENGTH_SHORT).show();
-            });
-        }
+        tabAll = findViewById(R.id.tabAll);
+        tabSafe = findViewById(R.id.tabSafe);
+        tabFlagged = findViewById(R.id.tabFlagged);
 
-        // Rogue Network: Intercepted and blocked
-        if (btnBlockedRogueAction != null) {
-            btnBlockedRogueAction.setOnClickListener(v -> {
-                if (!overridePermitted) {
-                    showBlockedDialog(
-                            "[rogue ap]",
-                            "A4:5E:60:C2:14:78",
-                            "Open (Unencrypted)",
-                            "Unknown / Spoofed",
-                            "88/100 (Critical)"
-                    );
-                } else {
-                    Toast.makeText(this, "Override active: Connecting to [rogue ap] at your own risk...", Toast.LENGTH_LONG).show();
-                }
-            });
+        emptyState = findViewById(R.id.emptyState);
+        recyclerView = findViewById(R.id.networkList);
+        btnRescan = findViewById(R.id.btnRescan);
+
+        adapter = new NetworkAdapter(this);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(adapter);
+
+        scanner = new WifiScanner(this, this);
+
+        btnRescan.setOnClickListener(v -> startScan());
+        tabAll.setOnClickListener(v -> applyFilter(Filter.ALL));
+        tabSafe.setOnClickListener(v -> applyFilter(Filter.SAFE));
+        tabFlagged.setOnClickListener(v -> applyFilter(Filter.FLAGGED));
+
+        // MainActivity already scanned before navigating here, so show those
+        // results immediately rather than making the user wait again.
+        allResults = ScanRepository.getInstance().getResults();
+        render();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        scanner.start();
+
+        // The initial scan has to happen after scanner.start() has registered
+        // the broadcast receiver — kicking it off in onCreate would race the
+        // registration and the results could arrive with nothing listening.
+        if (initialScanPending) {
+            initialScanPending = false;
+            if (allResults.isEmpty()) {
+                // Empty means the process was restarted or the user landed here
+                // directly, so there is nothing cached to show.
+                startScan();
+            }
         }
     }
 
-    private void showBlockedDialog(String ssid, String bssid, String security, String vendor, String threatScore) {
-        Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_security_block);
+    @Override
+    protected void onStop() {
+        super.onStop();
+        scanner.stop();
+    }
 
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+    // ------------------------------------------------------------------
+    // Scanning
+    // ------------------------------------------------------------------
+
+    private void startScan() {
+        if (!WifiScanner.hasPermissions(this)) {
+            ActivityCompat.requestPermissions(this, WifiScanner.requiredPermissions(),
+                    PERMISSION_REQUEST);
+            return;
+        }
+        btnRescan.setEnabled(false);
+        btnRescan.setText(R.string.scanning);
+        scanner.requestScan();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                            @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST) {
+            if (WifiScanner.hasPermissions(this)) {
+                startScan();
+            } else {
+                Toast.makeText(this, R.string.permission_needed, Toast.LENGTH_LONG).show();
+                render();
+            }
+        }
+    }
+
+    @Override
+    public void onScanComplete(List<AccessPoint> accessPoints) {
+        runOnUiThread(() -> {
+            allResults = accessPoints;
+            resetRescanButton();
+            render();
+        });
+    }
+
+    @Override
+    public void onScanFailed(String message) {
+        runOnUiThread(() -> {
+            resetRescanButton();
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            render();
+        });
+    }
+
+    private void resetRescanButton() {
+        btnRescan.setEnabled(true);
+        btnRescan.setText(R.string.rescan_network);
+    }
+
+    // ------------------------------------------------------------------
+    // Rendering
+    // ------------------------------------------------------------------
+
+    private void applyFilter(Filter filter) {
+        activeFilter = filter;
+        render();
+    }
+
+    private void render() {
+        RogueDetector.Summary summary = RogueDetector.summarise(allResults);
+        statTotal.setText(String.valueOf(summary.total));
+        statSafe.setText(String.valueOf(summary.safe));
+        statFlagged.setText(String.valueOf(summary.flagged));
+
+        styleTab(tabAll, activeFilter == Filter.ALL);
+        styleTab(tabSafe, activeFilter == Filter.SAFE);
+        styleTab(tabFlagged, activeFilter == Filter.FLAGGED);
+
+        List<AccessPoint> visible = new ArrayList<>();
+        for (AccessPoint ap : allResults) {
+            boolean flagged = ap.verdict != Verdict.SAFE;
+            if (activeFilter == Filter.ALL
+                    || (activeFilter == Filter.SAFE && !flagged)
+                    || (activeFilter == Filter.FLAGGED && flagged)) {
+                visible.add(ap);
+            }
+        }
+        adapter.submit(visible);
+
+        boolean nothingToShow = visible.isEmpty();
+        emptyState.setVisibility(nothingToShow ? View.VISIBLE : View.GONE);
+        recyclerView.setVisibility(nothingToShow ? View.GONE : View.VISIBLE);
+
+        if (nothingToShow) {
+            emptyState.setText(allResults.isEmpty()
+                    ? getString(R.string.empty_no_scan)
+                    : getString(R.string.empty_no_match));
+        }
+    }
+
+    private void styleTab(TextView tab, boolean selected) {
+        tab.setBackgroundResource(selected
+                ? R.drawable.rescan_button_background
+                : R.drawable.filter_tab_background);
+        tab.setTextColor(ContextCompat.getColor(this,
+                selected ? R.color.white_text : R.color.secondary_white));
+    }
+
+    // ------------------------------------------------------------------
+    // Card actions
+    // ------------------------------------------------------------------
+
+    @Override
+    public void onShowReasons(AccessPoint ap) {
+        StringBuilder body = new StringBuilder();
+        body.append(ap.getSecurityLabel())
+                .append("  ·  ").append(ap.getBand())
+                .append("  ·  ").append(ap.level).append(" dBm\n")
+                .append(ap.bssid).append("  (").append(ap.vendor).append(")\n\n");
+
+        if (ap.reasons.isEmpty()) {
+            body.append(getString(R.string.no_findings));
+        } else {
+            for (int i = 0; i < ap.reasons.size(); i++) {
+                if (i > 0) {
+                    body.append("\n\n");
+                }
+                body.append("• ").append(ap.reasons.get(i));
+            }
+            body.append("\n\n").append(getString(R.string.heuristic_disclaimer));
         }
 
-        TextView tvThreatDetails = dialog.findViewById(R.id.tvThreatDetails);
-        Button btnKeepBlocked = dialog.findViewById(R.id.btnKeepBlocked);
-        TextView tvOverrideConnect = dialog.findViewById(R.id.tvOverrideConnect);
+        new AlertDialog.Builder(this)
+                .setTitle(ap.getDisplaySsid())
+                .setMessage(body.toString())
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
 
-        tvThreatDetails.setText(
-                "WiShield flagged this access point as an Evil Twin:\n\n" +
-                        "• SSID: " + ssid + "\n" +
-                        "• BSSID: " + bssid + "\n" +
-                        "• Security: " + security + "\n" +
-                        "• Vendor: " + vendor + "\n" +
-                        "• Threat Score: " + threatScore + "\n\n" +
-                        "Connecting will expose personal data, unencrypted traffic, and authentication credentials to eavesdropping."
-        );
-
-        // Default Choice: Dismiss dialog and maintain block
-        btnKeepBlocked.setOnClickListener(v -> {
-            dialog.dismiss();
-            Toast.makeText(this, "Connection safely prevented.", Toast.LENGTH_SHORT).show();
-        });
-
-        // Override Choice: User deliberately proceeds past the warning
-        tvOverrideConnect.setOnClickListener(v -> {
-            overridePermitted = true;
-            dialog.dismiss();
-
-            // Update button label to indicate override is active
-            MaterialButton btnBlockedRogueAction = findViewById(R.id.btnBlockedRogueAction);
-            if (btnBlockedRogueAction != null) {
-                btnBlockedRogueAction.setText("Override Allowed (Connect)");
-                btnBlockedRogueAction.setTextColor(Color.parseColor("#F59E0B")); // Amber warning color
-                btnBlockedRogueAction.setStrokeColorResource(android.R.color.holo_orange_dark);
-            }
-
-            Toast.makeText(this, "⚠️ Warning: Override acknowledged. Connection permitted.", Toast.LENGTH_LONG).show();
-        });
-
-        dialog.show();
+    @Override
+    public void onConnect(AccessPoint ap) {
+        // Android no longer lets an app silently join an arbitrary network, so
+        // the honest thing is to hand the user to the system Wi-Fi picker.
+        try {
+            Intent intent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? new Intent(Settings.Panel.ACTION_WIFI)
+                    : new Intent(Settings.ACTION_WIFI_SETTINGS);
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, R.string.cannot_open_wifi_settings, Toast.LENGTH_SHORT).show();
+        }
     }
 }

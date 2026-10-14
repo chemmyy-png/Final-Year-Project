@@ -13,4 +13,25 @@
     <string name="network_vendor_label">Vendor</string>
     <string name="connect">Connect</string>
     <string name="revoke_access">REVOKE ACCESS</string>
+
+    <!-- Added for the scanning backend -->
+    <string name="network_signal_label">Signal</string>
+    <string name="signal_dbm">%1$d dBm</string>
+    <string name="badge_safe">SAFE</string>
+    <string name="badge_suspicious">SUSPICIOUS</string>
+    <string name="why_flagged">Why flagged?</string>
+    <string name="scanning">Scanning…</string>
+    <string name="permission_needed">WiShield needs this permission to see nearby access points.</string>
+    <string name="cannot_open_wifi_settings">Couldn\'t open Wi-Fi settings on this device.</string>
+    <string name="no_findings">No issues found. This access point uses current encryption and no other network nearby is using its name.</string>
+    <string name="heuristic_disclaimer">These checks read only what access points broadcast publicly. They flag patterns worth investigating — they are not proof that a network is malicious, and a determined attacker can avoid them.</string>
+    <string name="empty_no_scan">No access points yet.\nTap Rescan Network to look around.</string>
+    <string name="empty_no_match">Nothing matches this filter.</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_app_logo">WiShield logo</string>
+    <string name="cd_network_icon">Network status indicator</string>
+    <string name="cd_total_icon">Total networks icon</string>
+    <string name="cd_safe_icon">Safe networks icon</string>
+    <string name="cd_flagged_icon">Flagged networks icon</string>
 </resources>
