@@ -1,6 +1,7 @@
 package com.example.wishieldrogueaccesspointdetectorapp.ui;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,10 +20,6 @@ import com.google.android.material.button.MaterialButton;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Renders each analysed access point into the card design already used in
- * activity_dashboard.xml, colour-coded by verdict.
- */
 public class NetworkAdapter extends RecyclerView.Adapter<NetworkAdapter.ViewHolder> {
 
     public interface OnCardActionListener {
@@ -41,7 +38,7 @@ public class NetworkAdapter extends RecyclerView.Adapter<NetworkAdapter.ViewHold
     }
 
     public void submit(List<AccessPoint> newItems) {
-        items = newItems != null ? newItems : new ArrayList<>();
+        this.items = newItems != null ? newItems : new ArrayList<>();
         notifyDataSetChanged();
     }
 
@@ -88,19 +85,17 @@ public class NetworkAdapter extends RecyclerView.Adapter<NetworkAdapter.ViewHold
         holder.badge.setText(badgeText);
         holder.badge.setTextColor(accent);
         holder.badge.setBackgroundResource(badgeBackground);
-        holder.icon.setImageTintList(android.content.res.ColorStateList.valueOf(accent));
+        holder.icon.setImageTintList(ColorStateList.valueOf(accent));
 
         boolean flagged = ap.verdict != Verdict.SAFE;
         holder.action.setText(flagged
                 ? context.getString(R.string.why_flagged)
                 : context.getString(R.string.connect));
-        holder.action.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+        holder.action.setBackgroundTintList(ColorStateList.valueOf(
                 flagged ? accent : ContextCompat.getColor(context, R.color.primary_blue)));
 
         holder.action.setOnClickListener(v -> {
-            if (listener == null) {
-                return;
-            }
+            if (listener == null) return;
             if (flagged) {
                 listener.onShowReasons(ap);
             } else {
@@ -108,7 +103,7 @@ public class NetworkAdapter extends RecyclerView.Adapter<NetworkAdapter.ViewHold
             }
         });
 
-        // Tapping anywhere on the card always explains the verdict.
+        // Tapping anywhere on the card opens the security alert popup
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onShowReasons(ap);

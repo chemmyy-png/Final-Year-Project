@@ -231,29 +231,56 @@ public class DashboardActivity extends AppCompatActivity
 
     @Override
     public void onShowReasons(AccessPoint ap) {
-        StringBuilder body = new StringBuilder();
-        body.append(ap.getSecurityLabel())
-                .append("  ·  ").append(ap.getBand())
-                .append("  ·  ").append(ap.level).append(" dBm\n")
-                .append(ap.bssid).append("  (").append(ap.vendor).append(")\n\n");
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_security_block);
 
-        if (ap.reasons.isEmpty()) {
-            body.append(getString(R.string.no_findings));
-        } else {
-            for (int i = 0; i < ap.reasons.size(); i++) {
-                if (i > 0) {
-                    body.append("\n\n");
-                }
-                body.append("• ").append(ap.reasons.get(i));
-            }
-            body.append("\n\n").append(getString(R.string.heuristic_disclaimer));
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
 
-        new AlertDialog.Builder(this)
-                .setTitle(ap.getDisplaySsid())
-                .setMessage(body.toString())
-                .setPositiveButton(android.R.string.ok, null)
-                .show();
+        // Telemetry breakdown
+        StringBuilder body = new StringBuilder();
+        body.append("SSID: ").append(ap.getDisplaySsid()).append("\n")
+                .append("BSSID: ").append(ap.bssid).append(" (").append(ap.vendor).append(")\n")
+                .append("Security: ").append(ap.getSecurityLabel()).append(" · ").append(ap.getBand()).append("\n")
+                .append("Signal: ").append(ap.level).append(" dBm\n\n");
+
+        if (ap.reasons != null && !ap.reasons.isEmpty()) {
+            body.append("Security Findings:\n");
+            for (String reason : ap.reasons) {
+                body.append("• ").append(reason).append("\n");
+            }
+        } else {
+            body.append("Heuristic engine detected anomalies on this network profile.");
+        }
+
+        // Bind using the exact XML IDs
+        TextView tvDetails = dialog.findViewById(R.id.tvThreatDetails);
+        com.google.android.material.button.MaterialButton btnKeepBlocked = dialog.findViewById(R.id.btnKeepBlocked);
+        TextView tvOverrideConnect = dialog.findViewById(R.id.tvOverrideConnect);
+
+        if (tvDetails != null) {
+            tvDetails.setText(body.toString());
+        }
+
+        if (btnKeepBlocked != null) {
+            btnKeepBlocked.setOnClickListener(v -> {
+                dialog.dismiss();
+                Toast.makeText(this, "Connection safely prevented.", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        if (tvOverrideConnect != null) {
+            tvOverrideConnect.setOnClickListener(v -> {
+                dialog.dismiss();
+                Toast.makeText(this, "Proceeding with override...", Toast.LENGTH_SHORT).show();
+                onConnect(ap);
+            });
+        }
+
+        dialog.show();
     }
 
     @Override

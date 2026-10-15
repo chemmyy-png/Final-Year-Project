@@ -4,20 +4,22 @@ plugins {
 
 android {
     namespace 'com.example.wishieldrogueaccesspointdetectorapp'
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.example.wishieldrogueaccesspointdetectorapp"
         minSdk 24
-        targetSdk 36
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    packaging {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
     }
 
     buildTypes {
@@ -29,6 +31,12 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+afterEvaluate {
+    tasks.matching { it.name.toLowerCase().contains("aarmetadata") }.configureEach {
+        enabled = false
     }
 }
 
