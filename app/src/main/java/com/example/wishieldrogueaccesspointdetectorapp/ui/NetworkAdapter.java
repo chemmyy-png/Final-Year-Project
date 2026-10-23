@@ -90,20 +90,17 @@ public class NetworkAdapter extends RecyclerView.Adapter<NetworkAdapter.ViewHold
         boolean flagged = ap.verdict != Verdict.SAFE;
         holder.action.setText(flagged
                 ? context.getString(R.string.why_flagged)
-                : context.getString(R.string.connect));
+                : "View Details");
         holder.action.setBackgroundTintList(ColorStateList.valueOf(
                 flagged ? accent : ContextCompat.getColor(context, R.color.primary_blue)));
 
         holder.action.setOnClickListener(v -> {
-            if (listener == null) return;
-            if (flagged) {
+            if (listener != null) {
                 listener.onShowReasons(ap);
-            } else {
-                listener.onConnect(ap);
             }
         });
 
-        // Tapping anywhere on the card opens the security alert popup
+        // Tapping anywhere on the card opens the security details popup
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onShowReasons(ap);

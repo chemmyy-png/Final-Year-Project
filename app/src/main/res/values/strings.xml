@@ -23,8 +23,8 @@
     <string name="scanning">Scanning…</string>
     <string name="permission_needed">WiShield needs this permission to see nearby access points.</string>
     <string name="cannot_open_wifi_settings">Couldn\'t open Wi-Fi settings on this device.</string>
-    <string name="no_findings">No issues found. This access point uses current encryption and no other network nearby is using its name.</string>
-    <string name="heuristic_disclaimer">These checks read only what access points broadcast publicly. They flag patterns worth investigating — they are not proof that a network is malicious, and a determined attacker can avoid them.</string>
+    <string name="no_findings">No issues found. This Wi-Fi uses strong password protection and no other nearby network is copying its name.</string>
+    <string name="heuristic_disclaimer">Note: These checks inspect standard information broadcast by nearby Wi-Fi devices to highlight potential risks and keep you informed.</string>
     <string name="empty_no_scan">No access points yet.\nTap Rescan Network to look around.</string>
     <string name="empty_no_match">Nothing matches this filter.</string>
 
