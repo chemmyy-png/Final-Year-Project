@@ -78,6 +78,12 @@ public final class RogueDetector {
             checkIndividual(ap);
         }
 
+        for (AccessPoint ap : accessPoints) {
+            if (ap.verdict == Verdict.SAFE) {
+                checkSafeHighlights(ap);
+            }
+        }
+
         sortBySeverityThenSignal(accessPoints);
         return accessPoints;
     }
@@ -125,39 +131,15 @@ public final class RogueDetector {
                 boolean downgraded = ap.getSecurityStrength() < strongest;
 
                 if (downgraded && ap.isUnencrypted()) {
-                    // The clearest evil-twin signature there is: same name as a
-                    // protected network, but served with no working encryption.
-                    // An attacker can copy an SSID for free; copying the
-                    // passphrase is the part they can't do, so the clone runs
-                    // open (or on WEP, which amounts to the same thing).
-                    ap.flag(Verdict.ROGUE, "Another access point broadcasts \"" + ap.ssid
-                            + "\" with real encryption, but this one is "
-                            + ap.getSecurityLabel()
-                            + " — a classic evil-twin pattern, where a copied network"
-                            + " name is served without the real network's protection.");
+                    ap.flag(Verdict.ROGUE, "Fake Network Alert: Copies a protected network name, but requires NO password.");
                 } else if (downgraded) {
-                    // Both are encrypted, just to different standards. Very
-                    // common and usually innocent: a single dual-band router
-                    // often advertises WPA3 on 5 GHz and WPA2 on 2.4 GHz for
-                    // older client devices. Worth noting, not worth alarming.
-                    ap.flag(Verdict.SUSPICIOUS, "Another access point broadcasts \"" + ap.ssid
-                            + "\" using stronger encryption than this one ("
-                            + ap.getSecurityLabel() + "). Dual-band routers do this"
-                            + " routinely for compatibility, so this is usually normal.");
+                    ap.flag(Verdict.SUSPICIOUS, "Security Difference: Another device nearby uses this name with stronger protection (" + ap.getSecurityLabel() + ").");
                 } else if (group.size() > 1) {
-                    ap.flag(Verdict.SUSPICIOUS, group.size() + " access points broadcast the name \""
-                            + ap.ssid + "\". This is completely normal for mesh Wi-Fi,"
-                            + " offices and campuses, but it is also what a cloned network"
-                            + " looks like. Worth confirming you expect that many.");
+                    ap.flag(Verdict.SUSPICIOUS, "Multiple Devices: " + group.size() + " devices share the name \"" + ap.ssid + "\". Common in office/mesh Wi-Fi.");
                 }
 
                 if (mixedVendors) {
-                    // TextUtils.join, not String.join — the latter needs API 26
-                    // and this project's minSdk is 24.
-                    ap.flag(Verdict.SUSPICIOUS, "Access points using this name come from"
-                            + " different hardware vendors (" + TextUtils.join(", ", vendors)
-                            + "). Mixed hardware happens in real networks, but it also"
-                            + " suggests one of them may not belong.");
+                    ap.flag(Verdict.SUSPICIOUS, "Mixed Brands: Devices with this name come from different brands (" + TextUtils.join(", ", vendors) + ").");
                 }
             }
         }
@@ -171,28 +153,44 @@ public final class RogueDetector {
         String security = ap.getSecurityLabel();
 
         if ("Open".equals(security)) {
-            ap.flag(Verdict.SUSPICIOUS, "This network has no encryption. Anything you send"
-                    + " over it that isn't itself encrypted can be read by anyone in range.");
+            ap.flag(Verdict.SUSPICIOUS, "No Password: Open network without protection. Anyone nearby can see what you send.");
         } else if ("WEP".equals(security)) {
-            ap.flag(Verdict.SUSPICIOUS, "WEP encryption is broken and can be cracked in minutes"
-                    + " with freely available tools. Treat it as effectively open.");
+            ap.flag(Verdict.SUSPICIOUS, "Weak Security: Uses outdated WEP security that hackers can easily crack.");
         }
 
         if (OuiLookup.isLocallyAdministered(ap.bssid)) {
-            // Real AP hardware ships with a vendor-assigned, globally unique MAC.
-            // A locally administered one is generated in software.
-            ap.flag(Verdict.SUSPICIOUS, "This access point's MAC address is software-generated"
-                    + " rather than assigned to real hardware. Phone hotspots and laptops"
-                    + " sharing a connection look like this — and so do most improvised"
-                    + " rogue access points.");
+            ap.flag(Verdict.SUSPICIOUS, "Hotspot/Software Address: Broadcast from a mobile hotspot or software tool rather than a physical router.");
 
-            // Software-generated MAC + no encryption + a name someone else is
-            // already using is three independent red flags on one device.
             if (ap.isUnencrypted() && ap.duplicateName) {
-                ap.flag(Verdict.ROGUE, "Taken together — a software-generated MAC, no encryption,"
-                        + " and a name already in use nearby — this matches the profile of a"
-                        + " rogue access point rather than ordinary network equipment.");
+                ap.flag(Verdict.ROGUE, "Fake Wi-Fi Warning: Unprotected network copying a nearby Wi-Fi name from a hotspot device.");
             }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Check 3: positive safety highlights for safe networks
+    // ------------------------------------------------------------------
+
+    private static void checkSafeHighlights(AccessPoint ap) {
+        String security = ap.getSecurityLabel();
+        if ("WPA3".equals(security) || "WPA2".equals(security)) {
+            ap.reasons.add("Strong Encryption: Protected with " + security + " password security.");
+        } else if ("WPA".equals(security)) {
+            ap.reasons.add("Encrypted Connection: Protected with WPA password security.");
+        } else if ("Enhanced Open".equals(security)) {
+            ap.reasons.add("Encrypted Connection: Uses Enhanced Open (OWE) wireless encryption.");
+        }
+
+        if (!ap.duplicateName) {
+            ap.reasons.add("Unique Name: No duplicate or copied network names detected nearby.");
+        } else {
+            ap.reasons.add("Multi-AP Setup: Shares name with matching secure routers nearby.");
+        }
+
+        if (!OuiLookup.isLocallyAdministered(ap.bssid) && !"Unknown".equals(ap.vendor)) {
+            ap.reasons.add("Hardware Verified: Broadcast from recognized " + ap.vendor + " router equipment.");
+        } else if (!OuiLookup.isLocallyAdministered(ap.bssid)) {
+            ap.reasons.add("Standard Hardware Address: Uses a valid physical hardware address.");
         }
     }
 

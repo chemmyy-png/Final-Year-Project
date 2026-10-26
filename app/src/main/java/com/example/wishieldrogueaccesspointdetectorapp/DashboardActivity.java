@@ -6,11 +6,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -240,44 +240,78 @@ public class DashboardActivity extends AppCompatActivity
                     new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
 
-        // Telemetry breakdown
+        boolean isSafe = ap.verdict == Verdict.SAFE;
+
+        // Short, concise summary breakdown
         StringBuilder body = new StringBuilder();
-        body.append("SSID: ").append(ap.getDisplaySsid()).append("\n")
-                .append("BSSID: ").append(ap.bssid).append(" (").append(ap.vendor).append(")\n")
-                .append("Security: ").append(ap.getSecurityLabel()).append(" · ").append(ap.getBand()).append("\n")
-                .append("Signal: ").append(ap.level).append(" dBm\n\n");
+        body.append("Network: ").append(ap.getDisplaySsid()).append("\n")
+                .append("Security: ").append(ap.getSecurityLabel()).append(" (").append(ap.getBand()).append(")\n")
+                .append("Vendor: ").append(ap.vendor).append("\n\n");
 
         if (ap.reasons != null && !ap.reasons.isEmpty()) {
-            body.append("Security Findings:\n");
-            for (String reason : ap.reasons) {
-                body.append("• ").append(reason).append("\n");
+            body.append(isSafe ? "Safety Highlights:\n" : "Why Flagged:\n");
+            for (int i = 0; i < ap.reasons.size(); i++) {
+                if (i > 0) {
+                    body.append("\n");
+                }
+                body.append("• ").append(ap.reasons.get(i));
             }
         } else {
-            body.append("Heuristic engine detected anomalies on this network profile.");
+            body.append(isSafe ? "Safe network. Protected with password encryption." : "Flagged network.");
         }
 
         // Bind using the exact XML IDs
+        ImageView ivDialogIcon = dialog.findViewById(R.id.ivDialogIcon);
+        TextView tvDialogTitle = dialog.findViewById(R.id.tvDialogTitle);
         TextView tvDetails = dialog.findViewById(R.id.tvThreatDetails);
         com.google.android.material.button.MaterialButton btnKeepBlocked = dialog.findViewById(R.id.btnKeepBlocked);
         TextView tvOverrideConnect = dialog.findViewById(R.id.tvOverrideConnect);
+
+        if (tvDialogTitle != null) {
+            tvDialogTitle.setText(isSafe ? "Network Verified" : "Security Warning");
+            tvDialogTitle.setTextColor(ContextCompat.getColor(this,
+                    isSafe ? R.color.status_green : R.color.status_red));
+        }
+
+        if (ivDialogIcon != null) {
+            ivDialogIcon.setImageResource(isSafe ? R.drawable.transparent_3 : R.drawable.transparent_2);
+            ivDialogIcon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                    ContextCompat.getColor(this, isSafe ? R.color.status_green : R.color.status_red)));
+            ivDialogIcon.setBackgroundColor(isSafe ? 0x1A22C55E : 0x1AEF4444);
+        }
 
         if (tvDetails != null) {
             tvDetails.setText(body.toString());
         }
 
         if (btnKeepBlocked != null) {
-            btnKeepBlocked.setOnClickListener(v -> {
-                dialog.dismiss();
-                Toast.makeText(this, "Connection safely prevented.", Toast.LENGTH_SHORT).show();
-            });
+            if (isSafe) {
+                btnKeepBlocked.setText("Connect to Network");
+                btnKeepBlocked.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    onConnect(ap);
+                });
+            } else {
+                btnKeepBlocked.setText("Keep Blocked (Recommended)");
+                btnKeepBlocked.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    Toast.makeText(this, "Connection safely prevented.", Toast.LENGTH_SHORT).show();
+                });
+            }
         }
 
         if (tvOverrideConnect != null) {
-            tvOverrideConnect.setOnClickListener(v -> {
-                dialog.dismiss();
-                Toast.makeText(this, "Proceeding with override...", Toast.LENGTH_SHORT).show();
-                onConnect(ap);
-            });
+            if (isSafe) {
+                tvOverrideConnect.setText("Close");
+                tvOverrideConnect.setOnClickListener(v -> dialog.dismiss());
+            } else {
+                tvOverrideConnect.setText("Connect Anyway (Override Warning)");
+                tvOverrideConnect.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    Toast.makeText(this, "Proceeding with override...", Toast.LENGTH_SHORT).show();
+                    onConnect(ap);
+                });
+            }
         }
 
         dialog.show();
